@@ -1,78 +1,197 @@
-A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis: Integrating SWOT Text Mining with Monte Carlo LCOH Projections
-Authors: İlker Mert¹, Hüseyin Yağlı², Jorge Costa³,⁴, Ana Paula Oliveira³,⁵,*
-¹Osmaniye Korkut Ata University, Türkiye · ²Gaziantep University, Türkiye · ³ISEC Lisboa, Portugal · ⁴NOVA FCT, Portugal · ⁵MARE-IPSetúbal, Portugal
-*Correspondence: ana.oliveira@iseclisboa.pt
+# A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis: Integrating SWOT Text Mining with Monte Carlo LCOH Projections
 
-https://img.shields.io/badge/License-MIT-yellow.svg
+**Authors**
 
-Supplementary documentation for the article "A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis: Integrating SWOT Text Mining with Monte Carlo LCOH Projections."
+İlker Mert¹, Hüseyin Yağlı², Jorge Costa³⁴, Ana Paula Oliveira³⁵*
 
-About the Study
-Text-Mining SWOT Analysis — Turkish hydrogen policy documents classified into Strength/Weakness/Opportunity/Threat categories and sub-themes using a hybrid keyword + zero-shot pipeline, validated by expert annotation (Cohen's κ = 0.81).
+¹ Osmaniye Korkut Ata University, Türkiye  
+² Gaziantep University, Türkiye  
+³ ISEC Lisboa, Portugal  
+⁴ NOVA School of Science and Technology (NOVA FCT), Portugal  
+⁵ MARE-IPSetúbal, Portugal  
 
-Stochastic LCOH Modeling — Monte Carlo simulation (N = 10,000) propagating uncertainty in CAPEX, SEC, electricity price, operating hours, OPEX, discount rate, and plant lifetime for a 20 MW PV-coupled alkaline electrolysis plant (2025–2050), with first-order Sobol sensitivity analysis.
+*Corresponding Author: ana.oliveira@iseclisboa.pt*
 
-Methodology (condensed excerpts)
-The snippets below illustrate the core logic of each pipeline stage for transparency. They are summaries, not the full production codebase.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Sub-theme clustering (TF-IDF + K-Means):
+---
 
-python
-vectorizer = TfidfVectorizer(stop_words=turkish_stopwords, max_features=100)
+## Overview
+
+This repository provides supplementary materials associated with the article:
+
+> **A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis: Integrating SWOT Text Mining with Monte Carlo LCOH Projections**
+
+The study combines Natural Language Processing (NLP) and techno-economic modeling to evaluate hydrogen policy frameworks and their implications for green hydrogen production costs.
+
+The framework consists of two integrated components:
+
+1. **Policy Text Analysis**
+   - SWOT-based classification of hydrogen policy documents.
+   - Hybrid keyword and zero-shot NLP pipeline.
+   - Expert validation using manually annotated samples.
+
+2. **Techno-Economic Assessment**
+   - Levelized Cost of Hydrogen (LCOH) modeling.
+   - Monte Carlo uncertainty analysis.
+   - Sensitivity assessment using Sobol indices.
+   - Long-term projections for green hydrogen production systems.
+
+---
+
+## Methodological Framework
+
+### Policy Analysis Pipeline
+
+The NLP workflow includes:
+
+- Text preprocessing
+- TF-IDF vectorization
+- K-Means clustering for sub-theme identification
+- Hybrid SWOT classification
+- Expert validation
+
+#### Example: TF-IDF and K-Means Clustering
+
+```python
+vectorizer = TfidfVectorizer(
+    stop_words=turkish_stopwords,
+    max_features=100
+)
+
 tfidf_matrix = vectorizer.fit_transform(texts)
-clusters = KMeans(n_clusters=k, random_state=42).fit_predict(tfidf_matrix)
-Hybrid SWOT classification (keyword-first, zero-shot fallback):
 
-python
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+clusters = KMeans(
+    n_clusters=k,
+    random_state=42
+).fit_predict(tfidf_matrix)
+```
 
-def classify_sentence(sentence, keyword_lexicon, keyword_threshold=1):
-    hit, score = match_keywords(sentence, keyword_lexicon)   # domain lexicon + negation window
+#### Example: Hybrid SWOT Classification
+
+```python
+classifier = pipeline(
+    "zero-shot-classification",
+    model="facebook/bart-large-mnli"
+)
+
+def classify_sentence(
+    sentence,
+    keyword_lexicon,
+    keyword_threshold=1
+):
+    hit, score = match_keywords(
+        sentence,
+        keyword_lexicon
+    )
+
     if score >= keyword_threshold:
         return hit, score, "keyword"
-    result = classifier(sentence, ["Strength", "Weakness", "Opportunity", "Threat"])
-    return result["labels"][0], result["scores"][0], "zero-shot"
-LCOH formulation (Section 2.4):
 
-python
-def compute_lcoh(capex, sec, price_mwh, hours, opex_share, crf):
-    # p_el converted €/MWh → €/kWh ; OPEX_t = opex_share * CAPEX_t
+    result = classifier(
+        sentence,
+        [
+            "Strength",
+            "Weakness",
+            "Opportunity",
+            "Threat"
+        ]
+    )
+
+    return (
+        result["labels"][0],
+        result["scores"][0],
+        "zero-shot"
+    )
+```
+
+---
+
+### LCOH Modeling
+
+The Levelized Cost of Hydrogen was calculated using discounted annualized capital costs, operating expenditures, and electricity consumption.
+
+#### Example: LCOH Function
+
+```python
+def compute_lcoh(
+    capex,
+    sec,
+    price_mwh,
+    hours,
+    opex_share,
+    crf
+):
     price_kwh = price_mwh / 1000
     opex = opex_share * capex
-    return (crf * capex + opex) / (hours / sec) + sec * price_kwh
-Monte Carlo / Sobol sensitivity (structure only):
 
-python
-def run_monte_carlo(sample_inputs_fn, n_iter=10_000):
-    return [compute_lcoh(*sample_inputs_fn()) for _ in range(n_iter)]
+    return (
+        (crf * capex + opex)
+        / (hours / sec)
+        + sec * price_kwh
+    )
+```
 
-# First-order Sobol indices (S1) estimated via variance decomposition
-# on the Monte Carlo output across the parameter set in Table 1.
-Repository Contents
-Content	Description
-Annotated corpus	Sentence-level SWOT-labeled Turkish policy text extracts
-Sub-theme keyword lexicon	Turkish domain keyword dictionary used for automated labeling
-Methodology excerpts	Condensed code illustrating clustering, classification, and LCOH/Monte Carlo logic (above)
-Output tables	Summary statistics corresponding to Tables 1–5 in the manuscript
-Note: Full Turkish policy source documents follow original publishers' terms; sentence-level classification outputs and document metadata are included here.
+where:
 
-Model Validation
-Expert-supervised SWOT annotation agreement: Cohen's κ = 0.81 (substantial agreement, Landis & Koch scale).
+- CAPEX = capital expenditure (€ kW⁻¹)
+- SEC = specific energy consumption (kWh kgH₂⁻¹)
+- CRF = capital recovery factor
+- OPEX = annual operating expenditure
+- pₑₗ = electricity price
 
-Data Sources
-CAPEX/SEC/learning-curve assumptions: Frieden & Leker (2024); Rasul et al. (2024); Brändle et al. (2021)
+---
 
-Learning-curve rates: IEA Global Hydrogen Review (2024); IRENA (2024)
+### Monte Carlo Simulation
 
-Electricity price: Turkish industrial tariff data (log-normal, μ = 67 €/MWh)
+Uncertainty propagation was performed using 10,000 Monte Carlo iterations.
 
-Citation
-Mert, İ., Yağlı, H., Costa, J., & Oliveira, A.P. (2026). A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis: Integrating SWOT Text Mining with Monte Carlo LCOH Projections. Sustainability, Volume, [Pages].
+```python
+def run_monte_carlo(
+    sample_inputs_fn,
+    n_iter=10000
+):
+    return [
+        compute_lcoh(*sample_inputs_fn())
+        for _ in range(n_iter)
+    ]
+```
 
-License
-MIT License.
+First-order Sobol indices were estimated through variance decomposition of simulation outputs.
 
-Contact
-Full code, annotated corpus, and simulation scripts available upon reasonable request:
+---
 
-Ana Paula Oliveira — ana.oliveira@iseclisboa.pt
+## Validation Results
+
+The SWOT classification framework was validated using expert-labelled samples.
+
+Cohen's Kappa (κ): 0.81
+
+According to the Landis and Koch interpretation scale, this value indicates substantial agreement between automated and expert classifications.
+
+---
+
+## Citation
+
+If you use this repository, please cite:
+
+```text
+Mert, İ., Yağlı, H., Costa, J., & Oliveira, A. P. (2026).
+A Hybrid NLP–Techno-Economic Framework for Hydrogen Policy Analysis:
+Integrating SWOT Text Mining with Monte Carlo LCOH Projections.
+Sustainability.
+```
+
+---
+
+## License
+
+This project is distributed under the MIT License.
+
+---
+
+## Contact
+
+Ana Paula Oliveira  
+ISEC Lisboa / MARE-IPSetúbal  
+Email: ana.oliveira@iseclisboa.pt
